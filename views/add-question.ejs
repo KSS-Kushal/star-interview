@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head') %>
+    <title>Add Question</title>
+    <style>
+        .autocomplete-suggestions {
+            border: 1px solid #e0e0e0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .autocomplete-suggestion {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .autocomplete-suggestion:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <%- include('./partials/navbar') %>
+    <div class="container mt-4">
+        <h1>Add Question</h1>
+        <form action="/" method="post">
+            <div class="form-group mb-2">
+                <label for="question">Question:</label>
+                <input type="text" class="form-control" id="question" name="question" required>
+            </div>
+            <div class="form-group mb-2">
+                <label for="answer">Answer:</label>
+                <textarea class="form-control" id="answer" name="answer" rows="3" required></textarea>
+            </div>
+            <div class="form-group mb-2">
+                <label for="category">Category:</label>
+                <input type="text" class="form-control" id="category" name="category" onkeyup="searchCategory(this.value)" required>
+                <div id="category-list" class="autocomplete-suggestions"></div>
+            </div>
+            <div class="form-group mb-2">
+                <label for="language">Language:</label>
+                <input type="text" class="form-control" id="language" name="language" onkeyup="searchLanguage(this.value)" required>
+                <div id="language-list" class="autocomplete-suggestions"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Question</button>
+        </form>
+    </div>
+    <%- include('./partials/script') %>
+    <%- include('./partials/autocomplete') %>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head') %>
+    <title>Home</title>
+</head>
+<body>
+    <%- include('./partials/navbar') %>
+    
+    <div class="container mt-4">
+        <h1 class="text-center">Home</h1>
+
+        <div class="form-row d-flex justify-content-between align-items-end mb-4">
+            <div class="col-md-5">
+                <div class="form-group">
+                    <label for="search">Search questions</label>
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Search questions" value="<%= search %>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="languageSelect">Language</label>
+                    <select class="form-control" id="languageSelect" name="language">
+                        <option value="">Select Language</option>
+                        <% languages.forEach(language => { %>
+                            <option value="<%= language %>" <%= selectedLanguage === language ? 'selected' : '' %>><%= language %></option>
+                        <% }); %>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="categorySelect">Category</label>
+                    <select class="form-control" id="categorySelect" name="category">
+                        <option value="">Select Category</option>
+                        <% categories.forEach(category => { %>
+                            <option value="<%= category %>" <%= selectedCategory === category ? 'selected' : '' %>><%= category %></option>
+                        <% }); %>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="questionsContainer">
+            <% questions.forEach(question => { %>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><%= question.question %></h5>
+                        <p class="card-text"><%= question.answer %></p>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <nav>
+            <ul class="pagination justify-content-center">
+                <% if (currentPage > 1) { %>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= search %>&language=<%= selectedLanguage %>&category=<%= selectedCategory %>">Previous</a>
+                    </li>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= i %>&search=<%= search %>&language=<%= selectedLanguage %>&category=<%= selectedCategory %>"><%= i %></a>
+                    </li>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= search %>&language=<%= selectedLanguage %>&category=<%= selectedCategory %>">Next</a>
+                    </li>
+                <% } %>
+            </ul>
+        </nav>
+    </div>
+    
+    <%- include('./partials/script') %>
+    
+    <script>
+        let language="JavaScript";
+        document.getElementById('languageSelect').addEventListener('change', function() {
+            language = this.value;
+            fetch(`/category?language=${language}`)
+                .then(response => response.json())
+                .then(data => {
+                    const categorySelect = document.getElementById('categorySelect');
+                    categorySelect.innerHTML = '<option value="">Select Category</option>';
+                    data.forEach(category => {
+                        categorySelect.innerHTML += `<option value="${category.category}">${category.category}</option>`;
+                    });
+                    updateQuestions({ language });
+                });
+        });
+
+        document.getElementById('categorySelect').addEventListener('change', function() {
+            updateQuestions({ category: this.value, language });
+        });
+
+        const searchInput = document.getElementById('search');
+        let debounceTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                updateQuestions({ search: this.value, language });
+            }, 300); // Adjust the debounce delay as needed
+        });
+
+        function updateQuestions(params) {
+            const url = new URL(window.location.href);
+            Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
+            fetch(url, { headers: { 'Accept': 'application/json' }})
+                .then(response => response.json())
+                .then(data => {
+                    const questionsContainer = document.getElementById('questionsContainer');
+                    questionsContainer.innerHTML = '';
+                    data.questions.forEach(question => {
+                        questionsContainer.innerHTML += `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">${question.question}</h5>
+                                    <p class="card-text">${question.answer}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    const paginationContainer = document.querySelector('nav ul.pagination');
+                    paginationContainer.innerHTML = '';
+
+                    if (data.currentPage > 1) {
+                        paginationContainer.innerHTML += `
+                            <li class="page-item">
+                                <a class="page-link" href="?page=${data.currentPage - 1}&search=${params.search || ''}&language=${params.language || ''}&category=${params.category || ''}">Previous</a>
+                            </li>
+                        `;
+                    }
+
+                    for (let i = 1; i <= data.totalPages; i++) {
+                        paginationContainer.innerHTML += `
+                            <li class="page-item ${data.currentPage === i ? 'active' : ''}">
+                                <a class="page-link" href="?page=${i}&search=${params.search || ''}&language=${params.language || ''}&category=${params.category || ''}">${i}</a>
+                            </li>
+                        `;
+                    }
+
+                    if (data.currentPage < data.totalPages) {
+                        paginationContainer.innerHTML += `
+                            <li class="page-item">
+                                <a class="page-link" href="?page=${data.currentPage + 1}&search=${params.search || ''}&language=${params.language || ''}&category=${params.category || ''}">Next</a>
+                            </li>
+                        `;
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
